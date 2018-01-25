@@ -22,11 +22,16 @@ class XmlLoader
 public:
 
 	XmlLoader(const wxString& filename);
+	~XmlLoader();
 	tinyxml2::XMLElement* findWorksheet(tinyxml2::XMLDocument* doc, const wxString& sheetName);
 	void loadArpCache(tinyxml2::XMLDocument* doc);
 	void loadBridges(tinyxml2::XMLDocument* doc);
 	void loadIPAddresses(tinyxml2::XMLDocument* doc);
 	void loadIPRoutes(tinyxml2::XMLDocument* doc);
+	bool filterIP(IPAddressEntry* ip);
+
+	vector<IPAddressEntry* > getIpAddresses();
+	vector<IPRouteEntry* > getRoutes();
 };
 
 #endif

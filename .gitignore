@@ -2,3 +2,9 @@ NetworkMapCreation/dream.xml
 NetworkMapCreation/output.txt
 NetworkMapCreation/SwMonMACTableTest.xml
 NetworkMapCreation/SwMonMACTable.xml
+x64/
+tinyxml2-Debug-Lib/
+tinyxml2-Release-Lib/
+temp/
+Release/
+NetworkMapCreation/Debug/

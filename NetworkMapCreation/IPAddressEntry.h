@@ -6,6 +6,8 @@
 class IPAddressEntry
 {
 public:
+	bool isValid;
+
 	static int deviceNameXMLId;
 	static int interfaceNameXMLId;
 	static int macAddressXMLId;
@@ -16,9 +18,9 @@ public:
 	wxString deviceName;
 	wxString interfaceName;
 	wxString macAddress;
-	wxString ipAddress;
-	wxString mask;
-	wxString subnet;
+	unsigned int ipAddress;
+	unsigned int mask;
+	unsigned int subnet;
 };
 
 #endif

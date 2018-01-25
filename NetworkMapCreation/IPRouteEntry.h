@@ -14,11 +14,11 @@ public:
 	static int nextHopXMLId;
 
 	wxString routerName;
-	wxString routerIP;
+	unsigned int routerIP;
 	wxString interfaceName;
-	wxString route;
-	wxString mask;
-	wxString nextHop;
+	unsigned int route;
+	unsigned int mask;
+	unsigned int nextHop;
 };
 
 #endif

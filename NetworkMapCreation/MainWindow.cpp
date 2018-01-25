@@ -1,7 +1,17 @@
 #include "MainWindow.h"
 #include "XMLLoader.h"
-#include "Render.h"
+#include "GraphBuilder.h"
 #include <wx/filedlg.h>
+#include <wx/dialog.h>
+#include <wx/filename.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <utility>
+#include <algorithm>
+#include <thread>
+#include <chrono>
 
 MainWindow::MainWindow(wxWindow * parent, wxWindowID id, const wxString & title, const wxPoint & pos, const wxSize & size, long style, const wxString & name)
 	: wxFrame(parent, id, title, pos, size, style, name)
@@ -11,93 +21,143 @@ MainWindow::MainWindow(wxWindow * parent, wxWindowID id, const wxString & title,
 	toolbar = new Toolbar(this, wxT("Toolbar"));
 	vbox->Add(toolbar, 0, wxALIGN_TOP | wxEXPAND);
 
-	GraphNode* graph = CreateGraph();
-	Render* render = new Render(this, wxID_ANY, wxT("Render"), graph, 14);
+	render = new Render(this, wxID_ANY, wxT("Render"), nullptr);
 	vbox->Add(render, 1, wxALIGN_TOP | wxEXPAND);
 
 	SetSizer(vbox);
 
 	Connect(wxID_OPEN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler(MainWindow::OnFileOpen), nullptr, this);
+	Connect(wxID_SAVE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler(MainWindow::OnFileSave), nullptr, this);
+	Connect(wxID_SAVEAS, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler(MainWindow::OnFileSaveAs), nullptr, this);
+	//Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(MainWindow::OnClose), nullptr, this);
+
+	graph = nullptr;
+	loader = nullptr;
 }
 
-GraphNode* MainWindow::CreateGraph() {
-	GraphNode* graph = new GraphNode[14];
-	graph[0].x = 200;
-	graph[0].y = 200;
-	graph[0].type = GraphNode::ROUTER;
-	graph[0].addAdjancedNode(&graph[1]);
-
-	graph[1].x = 370;
-	graph[1].y = 240;
-	graph[1].type = GraphNode::CLOUD;
-	graph[1].addAdjancedNode(&graph[0])->addAdjancedNode(&graph[2]);
-
-	graph[2].x = 600;
-	graph[2].y = 300;
-	graph[2].type = GraphNode::ROUTER;
-	graph[2].addAdjancedNode(&graph[3])->addAdjancedNode(&graph[7]);
-
-	graph[3].x = 400;
-	graph[3].y = 400;
-	graph[3].type = GraphNode::CLOUD;
-	graph[3].addAdjancedNode(&graph[2])->addAdjancedNode(&graph[4]);
-
-	graph[4].x = 200;
-	graph[4].y = 630;
-	graph[4].type = GraphNode::ROUTER;
-	graph[4].addAdjancedNode(&graph[3])->addAdjancedNode(&graph[5]);
-
-	graph[5].x = 550;
-	graph[5].y = 640;
-	graph[5].type = GraphNode::CLOUD;
-	graph[5].addAdjancedNode(&graph[4])->addAdjancedNode(&graph[6]);
-
-	graph[6].x = 650;
-	graph[6].y = 570;
-	graph[6].type = GraphNode::ROUTER;
-	graph[6].addAdjancedNode(&graph[5])->addAdjancedNode(&graph[7])->addAdjancedNode(&graph[10]);
-
-	graph[7].x = 780;
-	graph[7].y = 280;
-	graph[7].type = GraphNode::CLOUD;
-	graph[7].addAdjancedNode(&graph[2])->addAdjancedNode(&graph[6])->addAdjancedNode(&graph[11]);
-
-	graph[8].x = 1100;
-	graph[8].y = 630;
-	graph[8].type = GraphNode::CLOUD;
-	graph[8].addAdjancedNode(&graph[9]);
-
-	graph[9].x = 835;
-	graph[9].y = 635;
-	graph[9].type = GraphNode::ROUTER;
-	graph[9].addAdjancedNode(&graph[8])->addAdjancedNode(&graph[10]);
-
-	graph[10].x = 870;
-	graph[10].y = 510;
-	graph[10].type = GraphNode::CLOUD;
-	graph[10].addAdjancedNode(&graph[6])->addAdjancedNode(&graph[9])->addAdjancedNode(&graph[11]);
-
-	graph[11].x = 1050;
-	graph[11].y = 310;
-	graph[11].type = GraphNode::ROUTER;
-	graph[11].addAdjancedNode(&graph[7])->addAdjancedNode(&graph[10])->addAdjancedNode(&graph[12]);
-
-	graph[12].x = 870;
-	graph[12].y = 230;
-	graph[12].type = GraphNode::CLOUD;
-	graph[12].addAdjancedNode(&graph[11])->addAdjancedNode(&graph[13]);
-
-	graph[13].x = 680;
-	graph[13].y = 210;
-	graph[13].type = GraphNode::ROUTER;
-	graph[13].addAdjancedNode(&graph[12]);
-
-	return graph;
+void MainWindow::OnClose(wxCloseEvent& event) {
+	if (loader != nullptr) {
+		delete loader;
+		loader = nullptr;
+	}
+	if (graph != nullptr) {
+		delete graph;
+		graph = nullptr;
+	}
+	event.Skip();
+	event.ShouldPropagate();
 }
 
 void MainWindow::OnFileOpen(wxCommandEvent& event) {
 	wxFileDialog openFileDialog(this, wxT("Open XML file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 	if (openFileDialog.ShowModal() == wxID_CANCEL)
 		return;
-	XmlLoader loader(openFileDialog.GetPath());
+	wxString path = openFileDialog.GetPath();
+	openFileDialog.Destroy();
+
+	wxFileName xmlFile(path);
+
+	wxFrame* dialog = new wxFrame(this, wxID_ANY, "Load", wxDefaultPosition, wxSize(450, 200), wxFULL_REPAINT_ON_RESIZE | (wxDEFAULT_FRAME_STYLE & ~(wxRESIZE_BORDER | wxMAXIMIZE_BOX | wxCLOSE_BOX | wxMINIMIZE_BOX | wxMAXIMIZE_BOX)));
+	wxBoxSizer *vbox = new wxBoxSizer(wxHORIZONTAL);
+	wxPanel* panel = new wxPanel(dialog);
+	wxBoxSizer *vboxpanel = new wxBoxSizer(wxVERTICAL);
+	wxStaticText* label = new wxStaticText(panel, wxID_ANY, wxString::Format(wxT("Loading %s, please wait"), xmlFile.GetFullName()), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
+	vboxpanel->AddStretchSpacer(1);
+	vboxpanel->Add(label, 1, wxEXPAND);
+	panel->SetSizer(vboxpanel);
+	vbox->Add(panel, 1, wxALIGN_CENTER | wxEXPAND);
+	dialog->SetSizer(vbox);
+	dialog->CenterOnParent();
+	dialog->Raise();
+	dialog->Show();
+	dialog->Update();
+
+	if (loader != nullptr) {
+		delete loader;
+		loader = nullptr;
+	}
+	if (graph != nullptr) {
+		delete graph;
+		graph = nullptr;
+	}
+	loader = new XmlLoader(path);
+	graph = GraphBuilder::buildGraph(loader);
+	graph = GraphBuilder::layoutGraphSugiyama(graph);
+	//graph = GraphBuilder::layoutGraphFMMM(graph);
+
+	dialog->Close();
+	openFileDialog.Destroy();
+	dialog->Destroy();
+	delete dialog;
+
+	int maxX = 0;
+	int maxY = 0;
+	for (int i = 0; i < graph->nodesCount; i++) {
+		if (maxX < graph->nodes[i]->x) {
+			maxX = graph->nodes[i]->x;
+		}
+		if (maxY < graph->nodes[i]->y) {
+			maxY = graph->nodes[i]->y;
+		}
+	}
+	render->setMaxDimensions(maxX, maxY);
+	render->setGraph(graph);
+	render->paintNow(false);
+}
+
+void MainWindow::OnFileSave(wxCommandEvent& event) {
+	OnFileSaveCustom(true);
+}
+
+void MainWindow::OnFileSaveAs(wxCommandEvent& event) {
+	OnFileSaveCustom(false);
+}
+
+void MainWindow::OnFileSaveCustom(bool saveAsPNG) {
+	wxString dialogStr1, dialogStr2;
+	if (saveAsPNG) {
+		dialogStr1 = wxT("Save PNG file");
+		dialogStr2 = wxT("PNG files (*.png)|*.png");
+	} else {
+		dialogStr1 = wxT("Save JPEG file");
+		dialogStr2 = wxT("JPEG files (*.jpg)|*.jpg");
+	}
+	wxFileDialog openFileDialog(this, dialogStr1, "", "", dialogStr2, wxFD_SAVE);
+	if (openFileDialog.ShowModal() == wxID_CANCEL)
+		return;
+	wxString path = openFileDialog.GetPath();
+	openFileDialog.Destroy();
+
+	wxFileName pngFile(path);
+	if (pngFile.Exists()) {
+		wxMessageDialog* dlg = new wxMessageDialog(this, wxString::Format(wxT("File %s already exists, overwrite?"), pngFile.GetFullName()), "Overwrite?", wxYES_NO);
+		if (dlg->ShowModal() == wxID_NO) {
+			return;
+		}
+		dlg->Destroy();
+		delete dlg;
+	}
+
+	wxFrame* dialog = new wxFrame(this, wxID_ANY, "Save", wxDefaultPosition, wxSize(450, 200), wxFULL_REPAINT_ON_RESIZE | (wxDEFAULT_FRAME_STYLE & ~(wxRESIZE_BORDER | wxMAXIMIZE_BOX | wxCLOSE_BOX | wxMINIMIZE_BOX | wxMAXIMIZE_BOX)));
+	wxBoxSizer *vbox = new wxBoxSizer(wxHORIZONTAL);
+	wxPanel* panel = new wxPanel(dialog);
+	wxBoxSizer *vboxpanel = new wxBoxSizer(wxVERTICAL);
+	wxStaticText* label = new wxStaticText(panel, wxID_ANY, wxString::Format(wxT("Saving %s, please wait"), pngFile.GetFullName()), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
+	vboxpanel->AddStretchSpacer(1);
+	vboxpanel->Add(label, 1, wxEXPAND);
+	panel->SetSizer(vboxpanel);
+
+	vbox->Add(panel, 1, wxALIGN_CENTER | wxEXPAND);
+	dialog->SetSizer(vbox);
+	dialog->CenterOnParent();
+	dialog->Raise();
+	dialog->Show();
+	dialog->Update();
+
+	render->renderToFile(path, saveAsPNG);
+
+	dialog->Close();
+	openFileDialog.Destroy();
+	dialog->Destroy();
+	delete dialog;
 }

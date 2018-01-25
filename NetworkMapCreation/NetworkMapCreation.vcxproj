@@ -71,19 +71,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(WXWIDGETS)\include;$(WXWIDGETS)\include\msvc;$(ProjectDir)tinyxml2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(WXWIDGETS)\lib\vc_lib;$(SolutionDir)tinyxml2-$(Configuration)-Lib</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(WXWIDGETS)\include;$(WXWIDGETS)\include\msvc;$(ProjectDir)tinyxml2;$(BOOST_ROOT);C:\NetworkMapCreation\ogdf-master\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(WXWIDGETS)\lib\vc_lib;$(SolutionDir)tinyxml2-$(Configuration)-Lib;C:\NetworkMapCreation\ogdf-master\$(Configuration)</LibraryPath>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(WXWIDGETS)\include;$(WXWIDGETS)\include\msvc;$(ProjectDir)tinyxml2;$(BOOST_ROOT);C:\NetworkMapCreation\ogdf-master\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x86;$(WXWIDGETS)\lib\vc_x64_lib;$(SolutionDir)bin\tinyxml2\x64-tinyxml2-$(Configuration)-Lib;C:\NetworkMapCreation\ogdf-master\$(Platform)\$(Configuration)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(WXWIDGETS)\include;$(WXWIDGETS)\include\msvc;$(ProjectDir)tinyxml2</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(WXWIDGETS)\lib\vc_lib;$(SolutionDir)tinyxml2-$(Configuration)-Lib</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(WXWIDGETS)\include;$(WXWIDGETS)\include\msvc;$(ProjectDir)tinyxml2;$(BOOST_ROOT);C:\NetworkMapCreation\ogdf-master\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(WXWIDGETS)\lib\vc_lib;$(SolutionDir)tinyxml2-$(Configuration)-Lib;C:\NetworkMapCreation\ogdf-master\$(Configuration)</LibraryPath>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(WXWIDGETS)\include;$(WXWIDGETS)\include\msvc;$(ProjectDir)tinyxml2;$(BOOST_ROOT);C:\NetworkMapCreation\ogdf-master\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x86;$(WXWIDGETS)\lib\vc_x64_lib;$(SolutionDir)bin\tinyxml2\x64-tinyxml2-$(Configuration)-Lib;C:\NetworkMapCreation\ogdf-master\$(Platform)\$(Configuration)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -92,12 +98,25 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);tinyxml2.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);tinyxml2.lib;OGDF.lib;COIN.lib</AdditionalDependencies>
     </Link>
+    <CustomBuildStep>
+      <Command>$(VC_ExecutablePath_x86)\editbin.exe /LARGEADDRESSAWARE $(OutDir)NetworkMapCreation.exe </Command>
+      <Inputs>$(OutDir)NetworkMapCreation.exe </Inputs>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>"$(VC_ExecutablePath_x86)\editbin.exe" /LARGEADDRESSAWARE "$(OutDir)NetworkMapCreation.exe"</Command>
+    </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -110,6 +129,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);tinyxml2.lib;OGDF.lib;COIN.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,14 +141,25 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);tinyxml2.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);tinyxml2.lib;OGDF.lib;COIN.lib</AdditionalDependencies>
     </Link>
+    <CustomBuildStep>
+      <Command>$(VC_ExecutablePath_x86)\editbin.exe /LARGEADDRESSAWARE $(OutDir)NetworkMapCreation.exe </Command>
+      <Inputs>$(OutDir)NetworkMapCreation.exe </Inputs>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>"$(VC_ExecutablePath_x86)\editbin.exe" /LARGEADDRESSAWARE "$(OutDir)NetworkMapCreation.exe"</Command>
+    </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -145,6 +176,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);tinyxml2.lib;OGDF.lib;COIN.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -152,8 +184,11 @@
     <ClInclude Include="ARPCacheEntry.h" />
     <ClInclude Include="BitmapHelper.h" />
     <ClInclude Include="BridgeTableEntry.h" />
+    <ClInclude Include="Graph.h" />
+    <ClInclude Include="GraphBuilder.h" />
     <ClInclude Include="GraphNode.h" />
     <ClInclude Include="IPAddressEntry.h" />
+    <ClInclude Include="IPHelper.h" />
     <ClInclude Include="IPRouteEntry.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="Render.h" />
@@ -167,7 +202,9 @@
     <ClCompile Include="ARPCacheEntry.cpp" />
     <ClCompile Include="BitmapHelper.cpp" />
     <ClCompile Include="BridgeTableEntry.cpp" />
+    <ClCompile Include="GraphBuilder.cpp" />
     <ClCompile Include="IPAddressEntry.cpp" />
+    <ClCompile Include="IPHelper.cpp" />
     <ClCompile Include="IPRouteEntry.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="Render.cpp" />
@@ -175,7 +212,15 @@
     <ClCompile Include="XMLLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Cloud.png" />
+    <Image Include="CloudUnknown.png" />
+    <Image Include="CloudUnknownYellow.png" />
+    <Image Include="icons\Cloud.ico" />
     <Image Include="icons\OpenFile.ico" />
+    <Image Include="icons\PIC.ico" />
+    <Image Include="icons\savetojpeg.ico" />
+    <Image Include="icons\savetopng.ico" />
+    <Image Include="Router.png" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NetworkMapCreation.rc" />

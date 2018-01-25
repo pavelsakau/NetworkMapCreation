@@ -57,6 +57,15 @@
     <ClInclude Include="Render.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IPHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp">
@@ -89,10 +98,40 @@
     <ClCompile Include="Render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IPHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icons\OpenFile.ico">
       <Filter>icons</Filter>
+    </Image>
+    <Image Include="icons\PIC.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Cloud.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Router.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="CloudUnknown.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="CloudUnknownYellow.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\savetojpeg.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\savetopng.ico">
+      <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

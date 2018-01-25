@@ -1,4 +1,5 @@
 #include "XMLLoader.h"
+#include "IPHelper.h"
 #include <fstream>
 
 tinyxml2::XMLElement* XmlLoader::findWorksheet(tinyxml2::XMLDocument* doc, const wxString& sheetName) {
@@ -115,6 +116,10 @@ void XmlLoader::loadBridges(tinyxml2::XMLDocument* doc) {
 	}
 }
 
+bool XmlLoader::filterIP(IPAddressEntry* ip) {
+	return ip->ipAddress == 2130706432 || ip->ipAddress == 2147483648 || ip->subnet == 2130706432 || ip->subnet == 2147483648 || ip->ipAddress == 0 || ip->subnet == 0;
+}
+
 void XmlLoader::loadIPAddresses(tinyxml2::XMLDocument* doc) {
 	tinyxml2::XMLElement* arpSheet = findWorksheet(doc, "IP Addresses");
 	if (arpSheet != nullptr) {
@@ -123,11 +128,15 @@ void XmlLoader::loadIPAddresses(tinyxml2::XMLDocument* doc) {
 		while (row != nullptr) {
 			tinyxml2::XMLElement* cell = row->FirstChildElement("Cell");
 			IPAddressEntry* ipAddressEntry = new IPAddressEntry;
+			ipAddressEntry->isValid = true;
 			int cellid = 0;
 			while (cell != nullptr) {
 				tinyxml2::XMLElement* data = cell->FirstChildElement("Data");
 				if (data != nullptr) {
-					wxString dataStr = data->FirstChild()->ToText()->Value();
+					wxString dataStr = L"";
+					if (!(data->FirstChild() == nullptr || data->FirstChild()->ToText() == nullptr)) {
+						dataStr = data->FirstChild()->ToText()->Value();
+					}
 					if (isHeader) {
 						if (dataStr.compare("Device Name") == 0) {
 							IPAddressEntry::deviceNameXMLId = cellid;
@@ -150,18 +159,19 @@ void XmlLoader::loadIPAddresses(tinyxml2::XMLDocument* doc) {
 						} else if (IPAddressEntry::macAddressXMLId == cellid) {
 							ipAddressEntry->macAddress = dataStr;
 						} else if (IPAddressEntry::ipAddressXMLId == cellid) {
-							ipAddressEntry->ipAddress = dataStr;
+							ipAddressEntry->ipAddress = IPHelper::stringToIP(dataStr);
 						} else if (IPAddressEntry::maskXMLId == cellid) {
-							ipAddressEntry->mask = dataStr;
+							ipAddressEntry->mask = IPHelper::stringToIP(dataStr);
 						} else if (IPAddressEntry::subnetXMLId == cellid) {
-							ipAddressEntry->subnet = dataStr;
+							ipAddressEntry->subnet = IPHelper::stringToIP(dataStr);
 						}
 					}
 				}
 				cell = cell->NextSiblingElement("Cell");
 				cellid++;
 			}
-			if (!isHeader) {
+			ipAddressEntry->isValid  = !(ipAddressEntry->ipAddress == 0 || ipAddressEntry->mask == 0 || ipAddressEntry->subnet == 0);
+			if ((!isHeader) && (!filterIP(ipAddressEntry))) {
 				ipAddresses.push_back(ipAddressEntry);
 			} else {
 				delete ipAddressEntry;
@@ -170,6 +180,14 @@ void XmlLoader::loadIPAddresses(tinyxml2::XMLDocument* doc) {
 			isHeader = false;
 		}
 	}
+}
+
+vector<IPAddressEntry* > XmlLoader::getIpAddresses() {
+	return ipAddresses;
+}
+
+vector<IPRouteEntry* > XmlLoader::getRoutes() {
+	return ipRoutes;
 }
 
 void XmlLoader::loadIPRoutes(tinyxml2::XMLDocument* doc) {
@@ -184,7 +202,10 @@ void XmlLoader::loadIPRoutes(tinyxml2::XMLDocument* doc) {
 			while (cell != nullptr) {
 				tinyxml2::XMLElement* data = cell->FirstChildElement("Data");
 				if (data != nullptr) {
-					wxString dataStr = data->FirstChild()->ToText()->Value();
+					wxString dataStr = L"";
+					if (!(data->FirstChild() == nullptr || data->FirstChild()->ToText() == nullptr)) {
+						dataStr = data->FirstChild()->ToText()->Value();
+					}
 					if (isHeader) {
 						if (dataStr.compare("Router Name") == 0) {
 							IPRouteEntry::routerNameXMLId = cellid;
@@ -203,15 +224,15 @@ void XmlLoader::loadIPRoutes(tinyxml2::XMLDocument* doc) {
 						if (IPRouteEntry::routerNameXMLId == cellid) {
 							ipRouteEntry->routerName = dataStr;
 						} else if (IPRouteEntry::routerIPXMLId == cellid) {
-							ipRouteEntry->routerIP = dataStr;
+							ipRouteEntry->routerIP = IPHelper::stringToIP(dataStr);
 						} else if (IPRouteEntry::interfaceNameXMLId == cellid) {
 							ipRouteEntry->interfaceName = dataStr;
 						} else if (IPRouteEntry::routeXMLId == cellid) {
-							ipRouteEntry->route = dataStr;
+							ipRouteEntry->route = IPHelper::stringToIP(dataStr);
 						} else if (IPRouteEntry::maskXMLId == cellid) {
-							ipRouteEntry->mask = dataStr;
+							ipRouteEntry->mask = IPHelper::stringToIP(dataStr);
 						} else if (IPRouteEntry::nextHopXMLId == cellid) {
-							ipRouteEntry->nextHop = dataStr;
+							ipRouteEntry->nextHop = IPHelper::stringToIP(dataStr);
 						}
 					}
 				}
@@ -229,32 +250,23 @@ void XmlLoader::loadIPRoutes(tinyxml2::XMLDocument* doc) {
 	}
 }
 
+XmlLoader::~XmlLoader() {
+	int totalIPAddresses = ipAddresses.size();
+	for (int i = 0; i < totalIPAddresses; i++) {
+		delete ipAddresses[i];
+	}
+	ipAddresses.clear();
+	int totalIPRoutes = ipRoutes.size();
+	for (int i = 0; i < totalIPRoutes; i++) {
+		delete ipRoutes[i];
+	}
+	ipRoutes.clear();
+}
+
 XmlLoader::XmlLoader(const wxString & filename)
 {
 	tinyxml2::XMLDocument doc;
 	doc.LoadFile(filename);
-	//loadArpCache(&doc);
-	//loadBridges(&doc);
 	loadIPAddresses(&doc);
-	//loadIPRoutes(&doc);
-	//ofstream f("output.txt");
-	//f << "ARP Cache entries:" << endl;
-	//for (int i = 0; i < arpCache.size(); i++) {
-	//	f << arpCache[i]->ipAddress << " " << arpCache[i]->macAddress << " " << arpCache[i]->notes << endl;
-	//}
-	//f << "Bridge entries:" << endl;
-	//for (int i = 0; i < bridges.size(); i++) {
-	//	f << bridges[i]->description << " " << bridges[i]->interfaceName << " " << bridges[i]->macAddress << " " << bridges[i]->switchIP << " " << bridges[i]->switchName << " " << bridges[i]->vlan << endl;
-	//}
-	//f << "IP Address entries:" << endl;
-	//for (int i = 0; i < ipAddresses.size(); i++) {
-	//	f << ipAddresses[i]->deviceName << " " << ipAddresses[i]->interfaceName << " " << ipAddresses[i]->ipAddress << " " << ipAddresses[i]->macAddress << " " << ipAddresses[i]->mask << " " << ipAddresses[i]->subnet << endl;
-	//}
-	//f << "IP Route entries:" << endl;
-	//for (int i = 0; i < ipRoutes.size(); i++) {
-	//	f << ipRoutes[i]->interfaceName << " " << ipRoutes[i]->mask << " " << ipRoutes[i]->nextHop << " " << ipRoutes[i]->route << " " << ipRoutes[i]->routerIP << " " << ipRoutes[i]->routerName << endl;
-	//}
-	//f.close();
-	//wxMessageBox(wxString::Format(wxT("ARP: %i, Bridges: %i, IP Addresses: %i, IPRoutes: %i"), arpCache.size(), bridges.size(), ipAddresses.size(), ipRoutes.size()));
-	wxMessageBox(wxString::Format(wxT("Loaded %i IPs"), ipAddresses.size()));
+	loadIPRoutes(&doc);
 }
